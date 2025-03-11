@@ -1,76 +1,94 @@
 
-# Todo App (Angular Frontend)
+# Todo API (ASP.NET Core Backend)
 
-This is a standalone Angular application that manages a todo list, interacting with a .NET Web API backend. It uses NgRx for state management and handles CRUD operations directly in the component, with error handling displayed in the UI.
+This is an ASP.NET Core Web API that provides CRUD operations for a todo list, using Entity Framework Core with an in-memory database. It serves as the backend for the Angular Todo App.
 
 ## Features
-- Create, read, update, and delete tasks.
-- Toggle task completion status.
-- Display error messages for failed API requests.
-- Uses NgRx Store for state management without Effects.
+- RESTful endpoints for managing tasks (GET, POST, PUT, DELETE).
+- In-memory database for simplicity (can be swapped for SQL Server or other providers).
+- CORS enabled for Angular frontend integration.
 
 ## Prerequisites
-- Node.js (v16+ recommended)
-- Angular CLI (`npm install -g @angular/cli`)
-- .NET Web API backend running at `http://localhost:7260/api/task` (see backend README)
+- .NET SDK (v6.0 or later recommended)
+- Visual Studio or VS Code (optional)
 
 ## Project Structure
-- src/
-  - app/
-    - app.component.ts        # Root component
-    - app.config.ts           # Standalone app configuration
-    - app.routes.ts           # Routing configuration
-    - todo.component.ts       # Main todo component with CRUD logic
-    - todo.component.html     # Template with UI and error display
-    - todo.component.css      # Styles
-    - state/
-      - todo.actions.ts       # NgRx actions
-      - todo.reducer.ts       # NgRx reducer with error state
-      - todo.selector.ts      # NgRx selectors
-  - task.service.ts          # Service for API calls
-  - main.ts                  # Bootstrap file
-```
+- TasksBackend/
+  - Controllers/
+    - TaskController.cs     # API endpoints for CRUD
+  - Data/
+    - AppDbContext.cs       # EF Core DbContext
+  - Models/
+    - TodoTask.cs           # Task model
+  - Program.cs             # Application entry point with CORS and services
+  - TasksBackend.csproj    # Project file
 
 ## Setup Instructions
-1. **Clone the Repository:**
-   ```bash
-   git clone <repository-url>
-   cd <angular-project-folder>
+1. **Navigate to Project Directory:**
+   ```powershell
+   cd C:\Users\turki\source\repos\TasksBackend
    ```
+   - Ensure a `.csproj` file exists. If not, create a new project:
+     ```powershell
+     dotnet new webapi -o TasksBackend
+     cd TasksBackend
+     ```
 
-2. **Install Dependencies:**
-   ```bash
-   npm install
+2. **Restore Dependencies:**
+   ```powershell
+   dotnet restore
    ```
 
 3. **Run the Application:**
-   ```bash
-   ng serve
+   ```powershell
+   dotnet run
    ```
-   - Open `http://localhost:4200` in your browser.
+   - Output should show:
+     ```
+     Now listening on: http://localhost:7260
+     ```
+   - API is accessible at `http://localhost:7260/api/task`.
 
-4. **Ensure Backend is Running:**
-   - The app connects to `http://localhost:7260/api/task`. Start the .NET Web API (see backend README) before running Angular.
-
-## Usage
-- **Add Task:** Enter a title and optional description, then click "Add Task".
-- **Edit Task:** Click the ✎ button, update the task, and click "Update Task".
-- **Toggle Task:** Click ✓ to mark a task as completed (only shown for incomplete tasks).
-- **Delete Task:** Click × to remove a task.
-- **Error Handling:** Errors (e.g., "Failed to load tasks") appear in a red alert box if the backend is unavailable or an operation fails.
+## API Endpoints
+- **GET /api/task** - Retrieve all tasks
+- **GET /api/task/{id}** - Retrieve a task by ID
+- **POST /api/task** - Create a new task
+  - Body: `{ "title": "string", "description": "string", "completed": boolean }`
+- **PUT /api/task/{id}** - Update a task
+  - Body: `{ "taskId": "string", "title": "string", "description": "string", "completed": boolean }`
+- **DELETE /api/task/{id}** - Delete a task
 
 ## Configuration
-- **API URL:** Edit `task.service.ts` if the backend URL differs:
-  ```typescript
-  private apiUrl = 'http://localhost:7260/api/task';
+- **CORS:** Enabled in `Program.cs` to allow requests from any origin:
+  ```csharp
+  builder.Services.AddCors(options =>
+  {
+      options.AddPolicy("AllowAll", policy =>
+      {
+          policy.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader();
+      });
+  });
+  app.UseCors("AllowAll");
   ```
+  - Update to `WithOrigins("http://localhost:4200")` for production to restrict to Angular.
+
+- **Database:** Uses in-memory database by default:
+  ```csharp
+  builder.Services.AddDbContext<AppDbContext>(options =>
+      options.UseInMemoryDatabase("TasksDb"));
+  ```
+  - Replace with a persistent database (e.g., SQL Server) if needed.
 
 ## Dependencies
-- `@angular/core`, `@angular/common`, `@angular/forms` for Angular functionality.
-- `@ngrx/store` for state management.
-- `rxjs` for Observables.
-- Bootstrap (assumed in HTML for styling; add via CDN or `npm install bootstrap`).
+- `Microsoft.EntityFrameworkCore` - ORM for database access.
+- `Microsoft.EntityFrameworkCore.InMemory` - In-memory database provider.
+- `Microsoft.AspNetCore.Mvc` - Web API framework.
 
 ## Troubleshooting
-- **API Connection Error:** Ensure the .NET backend is running and CORS is enabled.
-- **Blank Page:** Check the console (F12) for errors and verify `ng serve` output.
+- **Project Not Found:** Ensure you’re in the directory with `TasksBackend.csproj`. Use `dir` to verify.
+- **Port Conflict:** Check `launchSettings.json` or change the port if `7260` is in use.
+- **CORS Issues:** Verify `UseCors` is before `UseAuthorization` in `Program.cs`.
+
+## Testing
+- Use Postman or a browser to test `http://localhost:7260/api/task`.
+- Pair with the Angular frontend for full functionality.
